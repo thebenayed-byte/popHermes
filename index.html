@@ -1,115 +1,122 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<title>Pop Hermes</title>
-<link rel="manifest" href="manifest.json">
+  <meta charset="UTF-8">
+  <title>Pop Hermes</title>
+  <link rel="manifest" href="manifest.json">
 
-<style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #121212;
-  color: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
 
-.box {
-  padding: 20px;
-  width: 300px;
-}
+    .box {
+      padding: 20px;
+      width: 300px;
+      background: #1e1e1e;
+      border-radius: 12px;
+    }
 
-input, button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  border-radius: 8px;
-  border: none;
-}
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: none;
+    }
 
-button {
-  background: #25D366;
-  color: black;
-  font-weight: bold;
-}
+    button {
+      background: #25D366;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
 
-#popup {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #25D366;
-  color: black;
-  padding: 15px;
-  border-radius: 12px;
-  display: none;
-  z-index: 9999;
-}
-</style>
+    #popup {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #25D366;
+      color: black;
+      padding: 15px;
+      border-radius: 12px;
+      display: none;
+      z-index: 9999;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
 </head>
+
 <body>
+  <div class="box">
+    <input id="pseudo" placeholder="Pseudo">
+    <input id="message" placeholder="Message">
+    <button onclick="send()">Envoyer</button>
+  </div>
 
-<div class="box">
-  <input id="pseudo" placeholder="Pseudo">
-  <input id="message" placeholder="Message">
-  <button onclick="send()">Envoyer</button>
-</div>
+  <div id="popup"></div>
 
-<div id="popup"></div>
+  <!-- Socket.io -->
+  <script src="/socket.io/socket.io.js"></script>
 
-<script src="/socket.io/socket.io.js"></script>
-<script>
-https://pophermes.onrender.com
+  <script>
+    // Connecte au serveur Render
+    const socket = io("https://pop-hermes.onrender.com"); // <-- remplace par ton URL Render exacte
 
-// Enregistrer le service worker pour notifications
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
-}
+    // Service worker pour notifications
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
 
-// Demander permission notifications
-if (Notification.permission !== "granted") {
-  Notification.requestPermission();
-}
+    // Demande de permission notifications
+    if (Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
 
-// Fonction d'envoi
-function send() {
-  const pseudoValue = document.getElementById("pseudo").value;
-  const messageValue = document.getElementById("message").value;
+    // Fonction d'envoi
+    function send() {
+      const pseudoValue = document.getElementById("pseudo").value;
+      const messageValue = document.getElementById("message").value;
 
-  if (!pseudoValue || !messageValue) return;
+      if (!pseudoValue || !messageValue) return;
 
-  socket.emit("message", { pseudo: pseudoValue, message: messageValue });
+      socket.emit("message", { pseudo: pseudoValue, message: messageValue });
+      document.getElementById("message").value = "";
+    }
 
-  document.getElementById("message").value = ""; // vider le champ
-}
+    // Afficher popup + vibration
+    function showPopup(data) {
+      const popup = document.getElementById("popup");
+      popup.innerHTML = `<b>${data.pseudo}</b><br>${data.message>`;
+      popup.style.display = "block";
 
-// Afficher le popup + vibration
-function showPopup(data) {
-  const popup = document.getElementById("popup");
-  popup.innerHTML = `<b>${data.pseudo}</b><br>${data.message}`;
-  popup.style.display = "block";
+      if (navigator.vibrate) navigator.vibrate(300);
 
-  if (navigator.vibrate) navigator.vibrate(300);
+      setTimeout(() => popup.style.display = "none", 4000);
+    }
 
-  setTimeout(() => popup.style.display = "none", 4000);
-}
+    // Réception des messages
+    socket.on("message", data => {
+      showPopup(data);
 
-// Réception des messages
-socket.on("message", data => {
-  showPopup(data);
-
-  if (Notification.permission === "granted") {
-    navigator.serviceWorker.ready.then(reg => {
-      reg.showNotification(data.pseudo, {
-        body: data.message,
-        vibrate: [200, 100, 200]
-      });
+      if (Notification.permission === "granted") {
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification(data.pseudo, {
+            body: data.message,
+            vibrate: [200, 100, 200]
+          });
+        });
+      }
     });
-  }
-});
-</script>
+  </script>
 </body>
 </html>
+
