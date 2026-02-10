@@ -6,14 +6,21 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static(__dirname));
+app.use(express.static(__dirname)); // sert tous les fichiers statiques
 
 io.on("connection", socket => {
-  socket.on("message", msg => {
-    io.emit("message", msg);
+  console.log("Utilisateur connecté");
+
+  socket.on("message", data => {
+    console.log("Message reçu:", data);
+    io.emit("message", data);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Utilisateur déconnecté");
   });
 });
 
 server.listen(3000, () => {
-  console.log("http://localhost:3000");
+  console.log("Serveur lancé sur http://localhost:3000");
 });
