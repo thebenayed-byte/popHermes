@@ -2,20 +2,24 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Pop Hermès</title>
-
+<title>Pop Hermes</title>
 <link rel="manifest" href="manifest.json">
 
 <style>
 body {
   margin: 0;
+  font-family: Arial, sans-serif;
   background: #121212;
   color: white;
-  font-family: Arial;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
 }
 
 .box {
   padding: 20px;
+  width: 300px;
 }
 
 input, button {
@@ -28,6 +32,7 @@ input, button {
 
 button {
   background: #25D366;
+  color: black;
   font-weight: bold;
 }
 
@@ -45,7 +50,6 @@ button {
 }
 </style>
 </head>
-
 <body>
 
 <div class="box">
@@ -60,19 +64,40 @@ button {
 <script>
 const socket = io();
 
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js");
+// Enregistrer le service worker pour notifications
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
 }
 
-Notification.requestPermission();
+// Demander permission notifications
+if (Notification.permission !== "granted") {
+  Notification.requestPermission();
+}
 
+// Fonction d'envoi
 function send() {
-  const pseudo = pseudo.value;
-  const message = message.value;
-  if (!pseudo || !message) return;
-  socket.emit("message", { pseudo, message });
+  const pseudoValue = document.getElementById("pseudo").value;
+  const messageValue = document.getElementById("message").value;
+
+  if (!pseudoValue || !messageValue) return;
+
+  socket.emit("message", { pseudo: pseudoValue, message: messageValue });
+
+  document.getElementById("message").value = ""; // vider le champ
 }
 
+// Afficher le popup + vibration
+function showPopup(data) {
+  const popup = document.getElementById("popup");
+  popup.innerHTML = `<b>${data.pseudo}</b><br>${data.message}`;
+  popup.style.display = "block";
+
+  if (navigator.vibrate) navigator.vibrate(300);
+
+  setTimeout(() => popup.style.display = "none", 4000);
+}
+
+// Réception des messages
 socket.on("message", data => {
   showPopup(data);
 
@@ -80,21 +105,11 @@ socket.on("message", data => {
     navigator.serviceWorker.ready.then(reg => {
       reg.showNotification(data.pseudo, {
         body: data.message,
-        vibrate: [200, 100, 200],
+        vibrate: [200, 100, 200]
       });
     });
   }
 });
-
-function showPopup(data) {
-  const pop = document.getElementById("popup");
-  pop.innerHTML = `<b>${data.pseudo}</b><br>${data.message}`;
-  pop.style.display = "block";
-  navigator.vibrate?.(300);
-
-  setTimeout(() => pop.style.display = "none", 4000);
-}
 </script>
-
 </body>
 </html>
