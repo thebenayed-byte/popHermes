@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Pop Hermès</title>
+
+<link rel="manifest" href="manifest.json">
+
+<style>
+body {
+  margin: 0;
+  background: #121212;
+  color: white;
+  font-family: Arial;
+}
+
+.box {
+  padding: 20px;
+}
+
+input, button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 8px;
+  border: none;
+}
+
+button {
+  background: #25D366;
+  font-weight: bold;
+}
+
+#popup {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #25D366;
+  color: black;
+  padding: 15px;
+  border-radius: 12px;
+  display: none;
+  z-index: 9999;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <input id="pseudo" placeholder="Pseudo">
+  <input id="message" placeholder="Message">
+  <button onclick="send()">Envoyer</button>
+</div>
+
+<div id="popup"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+
+Notification.requestPermission();
+
+function send() {
+  const pseudo = pseudo.value;
+  const message = message.value;
+  if (!pseudo || !message) return;
+  socket.emit("message", { pseudo, message });
+}
+
+socket.on("message", data => {
+  showPopup(data);
+
+  if (Notification.permission === "granted") {
+    navigator.serviceWorker.ready.then(reg => {
+      reg.showNotification(data.pseudo, {
+        body: data.message,
+        vibrate: [200, 100, 200],
+      });
+    });
+  }
+});
+
+function showPopup(data) {
+  const pop = document.getElementById("popup");
+  pop.innerHTML = `<b>${data.pseudo}</b><br>${data.message}`;
+  pop.style.display = "block";
+  navigator.vibrate?.(300);
+
+  setTimeout(() => pop.style.display = "none", 4000);
+}
+</script>
+
+</body>
+</html>

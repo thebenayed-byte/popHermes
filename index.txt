@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Messagerie Popup</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .box {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+    }
+
+    input, button {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    button {
+      background: #25D366;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #popup {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #25D366;
+      color: black;
+      padding: 15px;
+      border-radius: 10px;
+      display: none;
+      animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(20px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+  </style>
+</head>
+<body>
+
+  <div class="box">
+    <input id="pseudo" placeholder="Ton pseudo">
+    <input id="message" placeholder="Ton message">
+    <button onclick="envoyer()">Envoyer</button>
+  </div>
+
+  <div id="popup"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    function envoyer() {
+      const pseudo = document.getElementById("pseudo").value;
+      const message = document.getElementById("message").value;
+
+      if (!pseudo || !message) return;
+
+      socket.emit("message", { pseudo, message });
+      document.getElementById("message").value = "";
+    }
+
+    socket.on("message", data => {
+      const popup = document.getElementById("popup");
+      popup.innerHTML = `<strong>${data.pseudo}</strong><br>${data.message}`;
+      popup.style.display = "block";
+
+      // vibration (mobile)
+      if (navigator.vibrate) {
+        navigator.vibrate(300);
+      }
+
+      setTimeout(() => {
+        popup.style.display = "none";
+      }, 4000);
+    });
+  </script>
+
+</body>
+</html>
